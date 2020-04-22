@@ -2,7 +2,6 @@ package com.homerours.musiccontrols;
 
 import org.apache.cordova.CordovaInterface;
 
-
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -37,8 +36,8 @@ public class MusicControlsNotification {
 	private String CHANNEL_ID;
 
 	// Public Constructor
-	public MusicControlsNotification(Activity cordovaActivity,int id){
-		this.CHANNEL_ID ="cordova-music-channel-id";
+	public MusicControlsNotification(Activity cordovaActivity, int id) {
+		this.CHANNEL_ID = "cordova-music-channel-id";
 		this.notificationID = id;
 		this.cordovaActivity = cordovaActivity;
 		Context context = cordovaActivity;
@@ -53,20 +52,20 @@ public class MusicControlsNotification {
 
 			int importance = NotificationManager.IMPORTANCE_LOW;
 
-			NotificationChannel mChannel = new NotificationChannel(this.CHANNEL_ID, name,importance);
+			NotificationChannel mChannel = new NotificationChannel(this.CHANNEL_ID, name, importance);
 
 			// Configure the notification channel.
 			mChannel.setDescription(description);
 
 			this.notificationManager.createNotificationChannel(mChannel);
-    }
+		}
 
 	}
 
 	// Show or update notification
-	public void updateNotification(MusicControlsInfos newInfos){
-		// Check if the cover has changed	
-		if (!newInfos.cover.isEmpty() && (this.infos == null || !newInfos.cover.equals(this.infos.cover))){
+	public void updateNotification(MusicControlsInfos newInfos) {
+		// Check if the cover has changed
+		if (!newInfos.cover.isEmpty() && (this.infos == null || !newInfos.cover.equals(this.infos.cover))) {
 			this.getBitmapCover(newInfos.cover);
 		}
 		this.infos = newInfos;
@@ -76,28 +75,28 @@ public class MusicControlsNotification {
 	}
 
 	// Toggle the play/pause button
-	public void updateIsPlaying(boolean isPlaying){
-		this.infos.isPlaying=isPlaying;
+	public void updateIsPlaying(boolean isPlaying) {
+		this.infos.isPlaying = isPlaying;
 		this.createBuilder();
 		Notification noti = this.notificationBuilder.build();
 		this.notificationManager.notify(this.notificationID, noti);
 	}
 
 	// Toggle the dismissable status
-	public void updateDismissable(boolean dismissable){
-		this.infos.dismissable=dismissable;
+	public void updateDismissable(boolean dismissable) {
+		this.infos.dismissable = dismissable;
 		this.createBuilder();
 		Notification noti = this.notificationBuilder.build();
 		this.notificationManager.notify(this.notificationID, noti);
 	}
 
 	// Get image from url
-	private void getBitmapCover(String coverURL){
-		try{
-			if(coverURL.matches("^(https?|ftp)://.*$"))
+	private void getBitmapCover(String coverURL) {
+		try {
+			if (coverURL.matches("^(https?|ftp)://.*$"))
 				// Remote image
 				this.bitmapCover = getBitmapFromURL(coverURL);
-			else{
+			else {
 				// Local image
 				this.bitmapCover = getBitmapFromLocal(coverURL);
 			}
@@ -107,7 +106,7 @@ public class MusicControlsNotification {
 	}
 
 	// get Local image
-	private Bitmap getBitmapFromLocal(String localURL){
+	private Bitmap getBitmapFromLocal(String localURL) {
 		try {
 			Uri uri = Uri.parse(localURL);
 			File file = new File(uri.getPath());
@@ -147,7 +146,7 @@ public class MusicControlsNotification {
 		}
 	}
 
-	private void createBuilder(){
+	private void createBuilder() {
 		Context context = cordovaActivity;
 		Notification.Builder builder = new Notification.Builder(context);
 
@@ -156,15 +155,15 @@ public class MusicControlsNotification {
 			builder.setChannelId(this.CHANNEL_ID);
 		}
 
-		//Configure builder
+		// Configure builder
 		builder.setContentTitle(infos.track);
-		if (!infos.artist.isEmpty()){
+		if (!infos.artist.isEmpty()) {
 			builder.setContentText(infos.artist);
 		}
 		builder.setWhen(0);
 
 		// set if the notification can be destroyed by swiping
-		if (infos.dismissable){
+		if (infos.dismissable) {
 			builder.setOngoing(false);
 			Intent dismissIntent = new Intent("music-controls-destroy");
 			PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 1, dismissIntent, 0);
@@ -172,86 +171,88 @@ public class MusicControlsNotification {
 		} else {
 			builder.setOngoing(true);
 		}
-		if (!infos.ticker.isEmpty()){
+		if (!infos.ticker.isEmpty()) {
 			builder.setTicker(infos.ticker);
 		}
-		
+
 		builder.setPriority(Notification.PRIORITY_MAX);
 
-		//If 5.0 >= set the controls to be visible on lockscreen
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP){
+		// If 5.0 >= set the controls to be visible on lockscreen
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
 			builder.setVisibility(Notification.VISIBILITY_PUBLIC);
 		}
 
-		//Set SmallIcon
+		// Set SmallIcon
 		boolean usePlayingIcon = infos.notificationIcon.isEmpty();
-		if(!usePlayingIcon){
+		if (!usePlayingIcon) {
 			int resId = this.getResourceId(infos.notificationIcon, 0);
 			usePlayingIcon = resId == 0;
-			if(!usePlayingIcon) {
+			if (!usePlayingIcon) {
 				builder.setSmallIcon(resId);
 			}
 		}
 
-		if(usePlayingIcon){
-			if (infos.isPlaying){
+		if (usePlayingIcon) {
+			if (infos.isPlaying) {
 				builder.setSmallIcon(this.getResourceId(infos.playIcon, android.R.drawable.ic_media_play));
 			} else {
-				builder.setSmallIcon(this.getResourceId(infos.pauseIcon, android.R.drawable.ic_media_pause));
+				builder.setSmallIcon(this.getResourceId(infos.pauseIcon, android.R.drawable.ic_media_play));
 			}
 		}
 
-		//Set LargeIcon
-		if (!infos.cover.isEmpty() && this.bitmapCover != null){
+		// Set LargeIcon
+		if (!infos.cover.isEmpty() && this.bitmapCover != null) {
 			builder.setLargeIcon(this.bitmapCover);
 		}
 
-		//Open app if tapped
+		// Open app if tapped
 		Intent resultIntent = new Intent(context, cordovaActivity.getClass());
 		resultIntent.setAction(Intent.ACTION_MAIN);
 		resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
 		PendingIntent resultPendingIntent = PendingIntent.getActivity(context, 0, resultIntent, 0);
 		builder.setContentIntent(resultPendingIntent);
 
-		//Controls
-		int nbControls=0;
-		/* Previous  */
-		if (infos.hasPrev){
+		// Controls
+		int nbControls = 0;
+		/* Previous */
+		if (infos.hasPrev) {
 			nbControls++;
 			Intent previousIntent = new Intent("music-controls-previous");
 			PendingIntent previousPendingIntent = PendingIntent.getBroadcast(context, 1, previousIntent, 0);
-			builder.addAction(this.getResourceId(infos.prevIcon, android.R.drawable.ic_media_previous), "", previousPendingIntent);
+			builder.addAction(this.getResourceId(infos.prevIcon, android.R.drawable.ic_media_previous), "",
+					previousPendingIntent);
 		}
-		if (infos.isPlaying){
-			/* Pause  */
+		if (infos.isPlaying) {
+			/* Pause */
 			nbControls++;
 			Intent pauseIntent = new Intent("music-controls-pause");
 			PendingIntent pausePendingIntent = PendingIntent.getBroadcast(context, 1, pauseIntent, 0);
 			builder.addAction(this.getResourceId(infos.pauseIcon, android.R.drawable.ic_media_pause), "", pausePendingIntent);
 		} else {
-			/* Play  */
+			/* Play */
 			nbControls++;
 			Intent playIntent = new Intent("music-controls-play");
 			PendingIntent playPendingIntent = PendingIntent.getBroadcast(context, 1, playIntent, 0);
 			builder.addAction(this.getResourceId(infos.playIcon, android.R.drawable.ic_media_play), "", playPendingIntent);
 		}
 		/* Next */
-		if (infos.hasNext){
+		if (infos.hasNext) {
 			nbControls++;
 			Intent nextIntent = new Intent("music-controls-next");
 			PendingIntent nextPendingIntent = PendingIntent.getBroadcast(context, 1, nextIntent, 0);
 			builder.addAction(this.getResourceId(infos.nextIcon, android.R.drawable.ic_media_next), "", nextPendingIntent);
 		}
 		/* Close */
-		if (infos.hasClose){
+		if (infos.hasClose) {
 			nbControls++;
 			Intent destroyIntent = new Intent("music-controls-destroy");
 			PendingIntent destroyPendingIntent = PendingIntent.getBroadcast(context, 1, destroyIntent, 0);
-			builder.addAction(this.getResourceId(infos.closeIcon, android.R.drawable.ic_menu_close_clear_cancel), "", destroyPendingIntent);
+			builder.addAction(this.getResourceId(infos.closeIcon, android.R.drawable.ic_menu_close_clear_cancel), "",
+					destroyPendingIntent);
 		}
 
-		//If 5.0 >= use MediaStyle
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP){
+		// If 5.0 >= use MediaStyle
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
 			int[] args = new int[nbControls];
 			for (int i = 0; i < nbControls; ++i) {
 				args[i] = i;
@@ -261,22 +262,21 @@ public class MusicControlsNotification {
 		this.notificationBuilder = builder;
 	}
 
-	private int getResourceId(String name, int fallback){
-		try{
-			if(name.isEmpty()){
+	private int getResourceId(String name, int fallback) {
+		try {
+			if (name.isEmpty()) {
 				return fallback;
 			}
 
-			int resId = this.cordovaActivity.getResources().getIdentifier(name, "drawable", this.cordovaActivity.getPackageName());
+			int resId = this.cordovaActivity.getResources().getIdentifier(name, "drawable",
+					this.cordovaActivity.getPackageName());
 			return resId == 0 ? fallback : resId;
-		}
-		catch(Exception ex){
+		} catch (Exception ex) {
 			return fallback;
 		}
 	}
 
-	public void destroy(){
+	public void destroy() {
 		this.notificationManager.cancel(this.notificationID);
 	}
 }
-
