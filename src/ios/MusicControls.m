@@ -21,6 +21,8 @@ MusicControlsInfo * musicControlsSettings;
     MusicControlsInfo * musicControlsInfo = [[MusicControlsInfo alloc] initWithDictionary:musicControlsInfoDict];
     musicControlsSettings = musicControlsInfo;
 
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(audioSessionRouteChangeObserver:) name:@"AVAudioSessionRouteChangeNotification" object:nil];
+    
     if (!NSClassFromString(@"MPNowPlayingInfoCenter")) {
         return;
     }
@@ -51,7 +53,36 @@ MusicControlsInfo * musicControlsSettings;
 
     [self registerMusicControlsEventListener];
 }
+- (void)audioSessionRouteChangeObserver:(NSNotification*)notification {
+    // NSNotificationのUserInfoを取得
+    NSDictionary* userInfo = notification.userInfo;
+    // 信号経路変更の理由を取得
+    AVAudioSessionRouteChangeReason audioSessionRouteChangeReason = [userInfo[@"AVAudioSessionRouteChangeReasonKey"] longValue];
+    // 信号経路変更以前の情報を取得
+    AVAudioSessionRouteDescription* audioSessionRouteDescription = userInfo[@"AVAudioSessionRouteChangePreviousRouteKey"];
+    // 信号経路変更以前の出力に関する情報を取得
+    AVAudioSessionPortDescription* audioSessionPortDescription = audioSessionRouteDescription.outputs[0];
 
+    // 信号経路変更の理由により分岐
+    switch (audioSessionRouteChangeReason) {
+        case AVAudioSessionRouteChangeReasonNewDeviceAvailable:
+            NSLog(@"さされた！");
+            NSLog(@"さされる前のoutputのtypeは、%@だ！", audioSessionPortDescription.portType);
+            break;
+        case AVAudioSessionRouteChangeReasonOldDeviceUnavailable:
+            NSLog(@"抜かれた！");
+            NSLog(@"抜かれる前のoutputのtypeは、%@だ！", audioSessionPortDescription.portType);
+            // 抜かれたものがヘッドフォンであれば、UIを停止状態に変更する
+            if([audioSessionPortDescription.portType isEqualToString:@"Headphones"]) {
+                NSLog(@"ヘッドフォンが抜かれたので、ここでUIを音声停止状態のものに変更する。");
+            }
+            NSString* jsonAction = [NSString stringWithFormat:@"{\"message\":\"%@\"}", @"headphone-off"];
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:jsonAction];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:[self latestEventCallbackId]];
+            
+            break;
+    }
+}
 - (void) updateIsPlaying: (CDVInvokedUrlCommand *) command {
     NSDictionary * musicControlsInfoDict = [command.arguments objectAtIndex:0];
     MusicControlsInfo * musicControlsInfo = [[MusicControlsInfo alloc] initWithDictionary:musicControlsInfoDict];
